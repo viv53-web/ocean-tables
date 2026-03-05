@@ -11,7 +11,7 @@ import SettingsScreen from './screens/SettingsScreen';
 export default function App() {
   const hasCompletedSetup = useGameStore(s => s.hasCompletedSetup);
   const [screen, setScreen] = useState<Screen>(hasCompletedSetup ? 'home' : 'setup');
-  const [activeTable, setActiveTable] = useState<number>(1);
+  const [activeTable, setActiveTable] = useState<{ n: number; mode: 'smart' | 'ascending' | 'descending' | 'random' }>({ n: 1, mode: 'smart' });
   const [completedTable, setCompletedTable] = useState<number>(1);
 
   // Sync screen when setup completes (e.g. after completeSetup() is called)
@@ -21,8 +21,8 @@ export default function App() {
     }
   }, [hasCompletedSetup, screen]);
 
-  const handleStartDrill = (tableN: number) => {
-    setActiveTable(tableN);
+  const handleStartDrill = (tableN: number, mode: 'smart' | 'ascending' | 'descending' | 'random' = 'smart') => {
+    setActiveTable({ n: tableN, mode });
     setScreen('drill');
   };
 
@@ -74,7 +74,8 @@ export default function App() {
             transition={{ duration: 0.3 }}
           >
             <DrillScreen
-              tableN={activeTable}
+              tableN={activeTable.n}
+              mode={activeTable.mode}
               onBack={handleBackToHome}
               onTableComplete={handleTableComplete}
             />

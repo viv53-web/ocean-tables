@@ -7,6 +7,7 @@ const STORAGE_KEY = 'mathgame_v1';
 interface GameStore extends AppState {
   completeSetup: (masteredTables: number[], pin: string) => void;
   answerFact: (fact: FactRecord, correct: boolean) => void;
+  recordTime: (tableN: number, type: 'ascending' | 'descending', timeMs: number) => void;
   updateMasteredTables: (tables: number[]) => void;
   resetProgress: () => void;
   setParentPin: (pin: string) => void;
@@ -25,9 +26,9 @@ function loadState(): Partial<AppState> {
 
 function saveState(state: AppState) {
   try {
-    const { hasCompletedSetup, masteredTables, facts, pearls, streak, lastSessionDate, parentPin } = state;
+    const { hasCompletedSetup, masteredTables, facts, pearls, experience, streak, lastSessionDate, parentPin, timerBestTimes } = state;
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      hasCompletedSetup, masteredTables, facts, pearls, streak, lastSessionDate, parentPin,
+      hasCompletedSetup, masteredTables, facts, pearls, experience, streak, lastSessionDate, parentPin, timerBestTimes,
     }));
   } catch {
     // ignore
@@ -39,9 +40,11 @@ const defaultState: AppState = {
   masteredTables: [],
   facts: [],
   pearls: 0,
+  experience: 0,
   streak: 0,
   lastSessionDate: '',
   parentPin: '',
+  timerBestTimes: {},
 };
 
 const saved = loadState();
@@ -57,9 +60,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       masteredTables,
       facts,
       pearls: 0,
+      experience: 0,
       streak: 0,
       lastSessionDate: '',
       parentPin: pin,
+      timerBestTimes: {},
     };
     set(newState);
     saveState(newState);
@@ -68,10 +73,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
   answerFact(fact, correct) {
     const state = get();
     const today = new Date().toDateString();
-    let { streak, lastSessionDate } = state;
+    let { streak, lastSessionDate, experience } = state;
 
-    // Update streak
+    // Update streak and experience
     if (correct) {
+      experience += 10; // 10 XP per correct answer
       if (lastSessionDate !== today) {
         streak = lastSessionDate === new Date(Date.now() - 86_400_000).toDateString()
           ? streak + 1
@@ -90,16 +96,31 @@ export const useGameStore = create<GameStore>((set, get) => ({
       ...state,
       facts,
       pearls: state.pearls + pearlsEarned,
-      streak: correct ? Math.max(streak, state.streak + (correct ? 1 : 0)) : 0,
+      experience,
+      streak: correct ? state.streak + 1 : 0,
       lastSessionDate: today,
     };
 
-    // Recalculate streak properly
-    const newStreak = correct ? state.streak + 1 : 0;
-    newState.streak = newStreak;
-
     set(newState);
     saveState(newState);
+  },
+
+  recordTime(tableN, type, timeMs) {
+    const state = get();
+    const currentBest = state.timerBestTimes[tableN]?.[type];
+    if (!currentBest || timeMs < currentBest) {
+      const newTimes = {
+        ...state.timerBestTimes,
+        [tableN]: {
+          ...state.timerBestTimes[tableN],
+          [type]: timeMs
+        }
+      };
+      const experience = state.experience + 50; // Bonus for completion
+      const newState = { ...state, timerBestTimes: newTimes, experience };
+      set(newState);
+      saveState(newState);
+    }
   },
 
   updateMasteredTables(tables) {
