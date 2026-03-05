@@ -28,6 +28,7 @@ export default function DrillScreen({ tableN, onBack, onTableComplete }: DrillSc
   const [wasCorrect, setWasCorrect] = useState<boolean | null>(null);
   const [showMnemonic, setShowMnemonic] = useState(false);
   const [pearlToast, setPearlToast] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Pick facts for this table only
@@ -35,6 +36,13 @@ export default function DrillScreen({ tableN, onBack, onTableComplete }: DrillSc
 
   useEffect(() => {
     loadNextFact();
+    
+    // Detect if we should use the custom numpad (mobile)
+    const mql = window.matchMedia('(max-width: 767px)');
+    setIsMobile(mql.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
   }, []);
 
   const loadNextFact = () => {
@@ -72,6 +80,7 @@ export default function DrillScreen({ tableN, onBack, onTableComplete }: DrillSc
 
   const handleNext = () => {
     loadNextFact();
+    // Only auto-focus if not on mobile, or always focus but inputMode="none" will handle it
     inputRef.current?.focus();
   };
 
@@ -189,8 +198,8 @@ export default function DrillScreen({ tableN, onBack, onTableComplete }: DrillSc
             <div className="flex gap-2">
               <input
                 ref={inputRef}
-                type="number"
-                inputMode="numeric"
+                type="text"
+                inputMode={isMobile ? 'none' : 'numeric'}
                 value={userInput}
                 onChange={e => setUserInput(e.target.value.replace(/\D/g, '').slice(0, 3))}
                 onKeyDown={e => e.key === 'Enter' && handleSubmit()}
