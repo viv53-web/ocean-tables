@@ -146,8 +146,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       ...state,
       facts,
       pearls: 0,
+      experience: 0,
       streak: 0,
       lastSessionDate: '',
+      timerBestTimes: {},
     };
     set(newState);
     saveState(newState);
