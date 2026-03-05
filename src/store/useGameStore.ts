@@ -7,7 +7,7 @@ const STORAGE_KEY = 'mathgame_v1';
 interface GameStore extends AppState {
   completeSetup: (masteredTables: number[], pin: string) => void;
   answerFact: (fact: FactRecord, correct: boolean) => void;
-  recordTime: (tableN: number, type: 'ascending' | 'descending', timeMs: number) => void;
+  recordTime: (tableN: number, type: 'ascending' | 'descending' | 'random', timeMs: number) => void;
   updateMasteredTables: (tables: number[]) => void;
   resetProgress: () => void;
   setParentPin: (pin: string) => void;
